@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'becrypt'
 
 const userSchema = new Schema({
     username: {
@@ -33,7 +34,7 @@ const userSchema = new Schema({
     watchHistory: [
         {
             type: Schema.Types.ObjectId,
-            ref: "video"
+            ref: "Video"
         }
     ],
     password: {
@@ -41,7 +42,7 @@ const userSchema = new Schema({
         required: [true, "Password required"]
     },
     refreshToken: {
-        type: true,
+        type: String,
     }
 }, { timestamps: true})
 
@@ -55,8 +56,8 @@ userSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password, this.password)
 }
 
-userSchema.methods.genrateAccessToken = async function(){
-    jwt.sign(
+userSchema.methods.generateAccessToken = async function(){
+    return jwt.sign(
         {
             _id: this._id,
             email: this.email,
@@ -69,8 +70,9 @@ userSchema.methods.genrateAccessToken = async function(){
         }
     )
 }
-userSchema.methods.genrateRefreshToken = async function(){
-    jwt.sign(
+
+userSchema.methods.generateRefreshToken = async function(){
+    return jwt.sign(
         {
             _id: this._id,
         },
