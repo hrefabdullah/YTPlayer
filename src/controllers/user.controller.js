@@ -1,3 +1,4 @@
+import path from 'path'
 import asyncHandler from '../utils/asyncHandler.js'
 import { ApiError } from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
@@ -6,28 +7,41 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 
 const registerUser = asyncHandler(async (req, res) => {
 
+    console.log(req.files)
+    console.log(req.body)
+    console.log('Cloudinary Key:', process.env.CLOUD_KEY)
+
     // Taking input from user
-    const { username, email, fullname, password } = req.body
+    const { username, email, fullName, password } = req.body
 
     // Validating user input
     if (
-        [username, email, password, fullname].some((fields) => fields.trim() === '')
+        [username, email, password, fullName].some((fields) => fields === '')
     ) {
         throw new ApiError(400, 'All fields are required')
     }
 
     // Checking if User already exists
-    const userExist = User.findOne({
+    const userExist = await User.findOne({
         $or: [{ username }, { email }]
     })
 
     if (userExist) {
-        throw new ApiError(409, "User with given username or email alreday exists!")
+        throw new ApiError(409, "User with given username or email already exists!")
     }
 
     // Check for Images, Avatar must
-    const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+
+    // Normalize the Windows backslashes to safe format
+    const avatarLocalPath = req.files?.avatar?.[0]?.path
+        ? path.normalize(req.files.avatar[0].path)
+        : null
+
+    let coverImageLocalPath
+    if( req.files && Array.isArray( req.files.coverImage ) && req.files.coverImage.length < 0){
+        coverImageLocalPath = req.files.coverImage.path
+    }
+
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
@@ -42,8 +56,8 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //Saving data to Database
-    const user = User.create({
-        fullname,
+    const user = await User.create({
+        fullName,
         avatar: avatar.url,
         coverImage: coverImage?.url || "",
         email,
