@@ -5,6 +5,7 @@ import { User } from '../models/user.model.js'
 import { fileUploader } from '../utils/FileUploader.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from 'jsonwebtoken'
+import removeLocalFiles from '../utils/removeLocalFiles.js'
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -309,6 +310,8 @@ const updateAvatar = asyncHandler( async(req, res) => {
         { new: true }
     ).select("-password")
 
+    removeLocalFiles( avatarLocalPath )
+
     return res
     .status(200)
     .json(
@@ -340,6 +343,8 @@ const updateCoverImg = asyncHandler( async(req, res) => {
         },
         { new: true }
     ).select("-password")
+
+    removeLocalFiles( coverImgLocalPath )
 
     return res
     .status(200)
