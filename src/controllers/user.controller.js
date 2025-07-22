@@ -33,10 +33,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
 
-    console.log(req.files)
-    console.log(req.body)
-    console.log('Cloudinary Key:', process.env.CLOUD_KEY)
-
     // Taking input from user
     const { username, email, fullName, password } = req.body
 
@@ -238,7 +234,7 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
     const { oldPass, newPass } = req.body
 
     const user = await User.findById(req.user?._id)
-    const isPassCorrect = await user.isPassCorrect(oldPass)
+    const isPassCorrect = await user.isPasswordCorrect(oldPass)
 
     if(!isPassCorrect){
         throw new ApiError(400, "Invalid old password")
@@ -282,7 +278,7 @@ const updateAccDetails = asyncHandler( async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200, "Updated successfully!")
+        new ApiResponse(200, user, "Updated successfully!")
     )
 })
 
@@ -424,7 +420,27 @@ const getUserChannelProfile = asyncHandler (async (req, res) => {
     )
 })
 
+const getHistory = asyncHandler( async (req, res) => {
+    const { username } = req.body
 
+    if(!username?.trim()){
+        throw new ApiError(400, "Username is required")
+    }
+
+    const history = await User.findOne({ username: username.toLowerCase() })
+        .select("-password -refreshToken") 
+        .sort({ createdAt: -1 })
+
+    if(!history){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, history, "User watch history fetched successfully")
+    )
+})
 
 
 export {
@@ -437,5 +453,6 @@ export {
     updateAccDetails,
     updateAvatar,
     updateCoverImg,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getHistory
 }
